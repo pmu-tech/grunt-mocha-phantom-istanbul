@@ -7,6 +7,11 @@ var Wombat = function(opts) {
     this.eat = function(food) {
         if (!food) throw Error('D:');
 
+        //This branche is not tested to fail branch threshold
+        if (food == 'test') {
+            return 'false';
+        }
+
         return 'nom nom';
     }
 

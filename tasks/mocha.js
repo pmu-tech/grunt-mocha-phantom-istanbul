@@ -21,6 +21,7 @@ var path          = require('path');
 var EventEmitter  = require('events').EventEmitter;
 var reporters     = require('mocha').reporters;
 var istanbul      = require('istanbul');
+var chalk         = require('chalk');
 
 // Helpers
 var helpers       = require('../support/mocha-helpers');
@@ -77,9 +78,9 @@ module.exports = function(grunt) {
       }
 
       if (evt === 'suite') {
-          suites.push(test);
+        suites.push(test);
       } else if (evt === 'suite end') {
-          suites.pop(test);
+        suites.pop(test);
       }
 
       // Trigger events for each runner listening
@@ -266,7 +267,7 @@ module.exports = function(grunt) {
             if (stats.failures > 0) {
               var reduced = helpers.reduceStats([stats]);
               var failMsg = reduced.failures + '/' + reduced.tests +
-                ' tests failed (' + reduced.duration + 's)';
+                  ' tests failed (' + reduced.duration + 's)';
 
               // Show Growl notice, if avail
               growl(failMsg, {
@@ -311,29 +312,34 @@ module.exports = function(grunt) {
         var finalCoverage = collector.getFinalCoverage(); // TODO do this a different way, bad for large # of files
         stats.coverage = istanbul.utils.summarizeCoverage(finalCoverage);
 
-        var coverageOptions = options.coverage || {};
+        var coverageOptions = options.coverage || {},
+            coverageFailed = false,
+            coverageLinesFailed = false,
+            coverageStatementsFailed = false,
+            coverageBranchesFailed = false,
+            coverageFunctionsFailed = false;
 
         // check if coverage was enable during the testrun
         if (stats.coverage && stats.coverage.lines && stats.coverage.lines.total > 0) {
 
           if (coverageOptions.htmlReport) {
             istanbul.Report.create('html', { dir: coverageOptions.htmlReport })
-              .writeReport(collector, true);
+                .writeReport(collector, true);
           }
 
           if (coverageOptions.coberturaReport) {
             istanbul.Report.create('cobertura', { dir: coverageOptions.coberturaReport })
-              .writeReport(collector, true);
+                .writeReport(collector, true);
           }
 
           if (coverageOptions.lcovReport) {
             istanbul.Report.create('lcov', { dir: coverageOptions.lcovReport })
-              .writeReport(collector, true);
+                .writeReport(collector, true);
           }
 
           if (coverageOptions.cloverReport) {
             istanbul.Report.create('clover', { dir: coverageOptions.cloverReport })
-              .writeReport(collector, true);
+                .writeReport(collector, true);
           }
 
           // write the coverage json to a file
@@ -341,19 +347,44 @@ module.exports = function(grunt) {
             grunt.file.write(coverageOptions.jsonReport + '/coverage.json', JSON.stringify(finalCoverage));
           }
 
-          grunt.log.ok('Coverage:');
-          grunt.log.ok('-  Lines: ' + stats.coverage.lines.pct + '%');
-          grunt.log.ok('-  Statements: ' + stats.coverage.statements.pct + '%');
-          grunt.log.ok('-  Functions: ' + stats.coverage.functions.pct + '%');
-          grunt.log.ok('-  Branches: ' + stats.coverage.branches.pct + '%');
+          if (coverageOptions.thresholds) {
+            if (coverageOptions.thresholds.lines && _.isNumber(coverageOptions.thresholds.lines)) {
+              coverageLinesFailed = coverageOptions.thresholds.lines > stats.coverage.lines.pct ? true : false;
+            } else {
+              grunt.warn('Lines threshold option must be a number');
+            }
+            if (coverageOptions.thresholds.statements && _.isNumber(coverageOptions.thresholds.statements)) {
+              coverageStatementsFailed = coverageOptions.thresholds.statements > stats.coverage.statements.pct ? true : false;
+            } else {
+              grunt.warn('Statements threshold option must be a number');
+            }
+            if (coverageOptions.thresholds.branches && _.isNumber(coverageOptions.thresholds.branches)) {
+              coverageBranchesFailed = coverageOptions.thresholds.branches > stats.coverage.branches.pct ? true : false;
+            } else {
+              grunt.warn('Branches threshold option must be a number');
+            }
+            if (coverageOptions.thresholds.functions && _.isNumber(coverageOptions.thresholds.functions)) {
+              coverageFunctionsFailed = coverageOptions.thresholds.functions > stats.coverage.functions.pct ? true : false;
+            } else {
+              grunt.warn('Functions threshold option must be a number');
+            }
+            coverageFailed = coverageLinesFailed || coverageStatementsFailed || coverageBranchesFailed || coverageFunctionsFailed;
+          }
+          grunt.log.writeln();
+          grunt.log.writeln(coverageFailed ? chalk.red('>> Coverage:') : chalk.green('>> Coverage:'));
+          grunt.log.writeln(coverageLinesFailed ? chalk.red('✗  Lines: ' + stats.coverage.lines.pct + '% < ' + coverageOptions.thresholds.lines + '% threshold') : chalk.green('✓  Lines: ' + stats.coverage.lines.pct + '%'));
+          grunt.log.writeln(coverageStatementsFailed ? chalk.red('✗  Statements: ' + stats.coverage.statements.pct + '% < ' + coverageOptions.thresholds.statements + '% threshold') : chalk.green('✓  Statements: ' + stats.coverage.statements.pct + '%'));
+          grunt.log.writeln(coverageBranchesFailed ? chalk.red('✗  Branches: ' + stats.coverage.branches.pct + '% < ' + coverageOptions.thresholds.branches + '% threshold') : chalk.green('✓  Branches: ' + stats.coverage.branches.pct + '%'));
+          grunt.log.writeln(coverageFunctionsFailed ? chalk.red('✗  Functions: ' + stats.coverage.functions.pct + '% < ' + coverageOptions.thresholds.functions + '% threshold') : chalk.green('✓  Functions: ' + stats.coverage.functions.pct + '%'));
+          grunt.log.writeln();
         }
 
         // Async test pass
-        done(true);
+        done(!coverageFailed);
 
       } else {
         var failMsg = stats.failures + '/' + stats.tests + ' tests failed (' +
-          stats.duration + 's)';
+            stats.duration + 's)';
 
         // Show Growl notice, if avail
         growl(failMsg, {

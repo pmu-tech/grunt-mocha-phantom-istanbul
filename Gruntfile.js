@@ -110,7 +110,7 @@ module.exports = function(grunt) {
       testDest1: {
         // Test files
         src: ['example/test/test2.html'],
-        dest: 'example/test/results/spec.out',
+        dest: 'example/results/spec.out',
         options: {
           reporter: 'Spec',
           run: true
@@ -127,7 +127,7 @@ module.exports = function(grunt) {
 
           run: true
         },
-        dest: 'example/test/results/xunit.out'
+        dest: 'example/results/xunit.out'
       },
 
       // Test a failing test with bail: true
@@ -167,11 +167,27 @@ module.exports = function(grunt) {
         options: {
           run: true,
           coverage: {
-            htmlReport: 'example/test/results/coverage.out/html',
-            coberturaReport: 'example/test/results/coverage.out/cobertura',
-            lcovReport: 'example/test/results/coverage.out/lcov',
-            cloverReport: 'example/test/results/coverage.out/clover',
-            jsonReport: 'example/test/results/coverage.out/json'
+            htmlReport: 'example/results/coverage.out/html',
+            coberturaReport: 'example/results/coverage.out/cobertura',
+            lcovReport: 'example/results/coverage.out/lcov',
+            cloverReport: 'example/results/coverage.out/clover',
+            jsonReport: 'example/results/coverage.out/json'
+          }
+        }
+      },
+
+      // Check Istanbul threshold.
+      testCoverageThreshold: {
+        src: ['example/test/testCoverage.html'],
+        options: {
+          run: true,
+          coverage: {
+            thresholds: {
+              lines: 100,
+              statements: 100,
+              functions: 100,
+              branches: 100
+            }
           }
         }
       }
@@ -197,7 +213,7 @@ module.exports = function(grunt) {
     var expected = ['spec', 'xunit'];
 
     expected.forEach(function (reporter) {
-      var output = 'example/test/results/' + reporter + '.out';
+      var output = 'example/results/' + reporter + '.out';
 
       // simply check if the file is non-empty since verifying if the output is
       // correct based on the spec is kind of hard due to changing test running
@@ -220,7 +236,7 @@ module.exports = function(grunt) {
     ];
 
     expectedCoverage.forEach(function (reporter) {
-      var output = 'example/test/results/coverage.out/' + reporter;
+      var output = 'example/results/coverage.out/' + reporter;
 
       if (!grunt.file.read(output, 'utf8')) {
         grunt.fatal('Empty reporter output: ' + reporter);
@@ -230,7 +246,7 @@ module.exports = function(grunt) {
     });
 
     // Clean-up.
-    grunt.file.delete('example/test/results/coverage.out');
+    grunt.file.delete('example/results/coverage.out');
   });
 
   // IMPORTANT: Actually load this plugin's task(s).
@@ -251,6 +267,7 @@ module.exports = function(grunt) {
     'connect:testDest',
     'mocha:testDest2',
     'mocha:testCoverage',
+    'mocha:testCoverageThreshold',
     'verifyDestResults'
   ]);
   grunt.task.registerTask('testPage', ['mocha:testPage']);
@@ -263,7 +280,7 @@ module.exports = function(grunt) {
     'testReporter',
     'testDest',
     'testPage',
-    'testBail',
+    'testBail'
   ]);
 
   // By default, lint and run all tests.

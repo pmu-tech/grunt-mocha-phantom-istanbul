@@ -44,6 +44,34 @@ default: `undefined`
 
 Destination folder to write a `clover.xml` file to, defaults to no report being generated.
 
+#### options.coverage.thresholds
+
+The options for this are specified in the thresholds object.
+
+#### options.coverage.thresholds.lines
+Type: `Number`
+Default: optional
+
+Checks the coverage of lines against this threshold.
+
+#### options.coverage.thresholds.statements
+Type: `Number`
+Default: optional
+
+Checks the coverage of statements against this threshold.
+
+#### options.coverage.thresholds.functions
+Type: `Number`
+Default: optional
+
+Checks the coverage of functions against this threshold.
+
+#### options.thresholds.branches
+Type: `Number`
+Default: optional
+
+Checks the coverage of branches against this threshold.
+
 Example:
 ```js
 mocha: {

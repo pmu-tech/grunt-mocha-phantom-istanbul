@@ -14,5 +14,7 @@ results
 node_modules
 npm-debug.log
 tmp
+atlassian-ide-plugin.xml
 
 .DS_Store
+.idea
